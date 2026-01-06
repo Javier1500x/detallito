@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌟 Mi Galaxia para el Amor de Mi Vida 🌌</title>
+    <!-- Importación de Three.js (esto es lo que faltaba para que funcione) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="compliment-box" class="hidden">
+        <p id="compliment-text"></p>
+        <button onclick="hideCompliment()">Cerrar</button> 
+    </div>
+
+    <!-- 
+      Reproductor de audio. 
+      IMPORTANTE: El enlace de Google Drive no funciona directamente. 
+      Debes obtener un enlace directo al archivo de audio (MP3, OGG, etc.) 
+      y reemplazar el valor de 'src'.
+    -->
+    <audio id="music-player" controls autoplay loop>
+        <source src="
+  https://javier1500x.github.io/cancion/BANDA%20MS%20.-%20EL%20COLOR%20DE%20TUS%20OJOS%20(LETRA).mp3" type="audio/mpeg">
+        Tu navegador no soporta el elemento de audio.
+    </audio>
+
+</body>
+<style>
+    /* Estilo del cuerpo y el canvas 3D */
+body { 
+    margin: 0; 
+    overflow: hidden; 
+    cursor: default;
+    /* Se quita el fondo negro para que el canvas de three.js controle el color */
+}
+
+canvas {
+    display: block;
+}
+
+/* Estilos del cuadro de cumplido */
+#compliment-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(10, 10, 20, 0.95);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    border: 2px solid #a8dadc;
+    max-width: 80%;
+    text-align: center;
+    box-shadow: 0 0 40px #a8dadc55;
+    z-index: 100; 
+    opacity: 0; 
+    transition: opacity 1.0s ease;
+    pointer-events: none;
+}
+
+#compliment-box.visible {
+    opacity: 1; 
+    pointer-events: all;
+}
+
+#compliment-text {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    font-family: 'Georgia', serif;
+}
+
+#compliment-box button {
+    background: #457b9d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background 0.3s;
+}
+
+#compliment-box button:hover {
+    background: #1d3557;
+}
+
+/* Estilos para un reproductor de audio bonito */
+#music-player {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 500px;
+    z-index: 200;
+    background: linear-gradient(145deg, #1e2a3a, #1a2330);
+    border-radius: 15px;
+    border: 1px solid #457b9d;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+}
+
+/* Estilos para los controles del reproductor */
+#music-player::-webkit-media-controls-panel {
+    background: transparent;
+}
+
+#music-player::-webkit-media-controls-play-button,
+#music-player::-webkit-media-controls-mute-button {
+    background-color: #a8dadc;
+    border-radius: 50%;
+}
+
+#music-player::-webkit-media-controls-current-time-display,
+#music-player::-webkit-media-controls-time-remaining-display {
+    color: #f1faee;
+    font-family: monospace;
+}
+
+#music-player::-webkit-media-controls-timeline {
+    background-color: #457b9d;
+    border-radius: 10px;
+    margin: 0 10px;
+}
+
+#music-player::-webkit-media-controls-volume-slider {
+    background-color: #457b9d;
+    border-radius: 10px;
+}
+</style>
+<script>
+    // ====================================================================
+// 1. CUMPLIDOS 💖
+// ====================================================================
+
+const COMPLIMENTS = [
+    "Eres mi persona favorita en el universo.",
+    "Te amo Xiomara con todo mi corazón.",
+    "Eres hermosa.",
+    "Te amo tal y como eres.",
+    "Te necesito más de lo que imaginas.",
+    "Brillas más que la Luna y las estrellas.",
+    "Tu sonrisa es mi lugar favorito.",
+    "Eres mi todo.",
+    "Mejoras cada uno de mis días.",
+    "Eres la persona más increíble.",
+    "Me encanta tu manera de ser.",
+    "Contigo, mi vida es perfecta.",
+    "Tu voz es mi calma.",
+    "Estoy loco por ti.",
+    "Eres mi mejor sueño hecho realidad.",
+    "Verte es mi mayor alegría.",
+    "Eres magia pura.",
+    "Eres mi hogar.",
+    "Siempre me haces sentir paz.",
+    "No hay nadie como tú.",
+    "Contigo soy mi mejor versión.",
+    "Me inspiras a ser mejor.",
+    "Eres la razón de mi felicidad.",
+    "Cada momento a tu lado es un tesoro.",
+    "Eres mi persona favorita.",
+    "Pienso en ti todo el tiempo.",
+    "Eres mi luz en la oscuridad.",
+    "No te cambiaría por nada.",
+    "Simplemente, gracias por existir.",
+    "Tienes un alma preciosa.",
+    "Me has enseñado a amar.",
+    "Te elijo hoy y siempre."
+];
+
+// ====================================================================
+// 2. INICIALIZACIÓN DE LA ESCENA 3D
+// ====================================================================
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050015); // Fondo de Nebulosa
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+// Corrección de transparencia y suavizado
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); 
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+let galaxyMesh; 
+let moonMesh; 
+
+// ====================================================================
+// 3. CARGA DE RECURSOS (Luna y Estrellas)
+// ====================================================================
+
+const textureLoader = new THREE.TextureLoader();
+
+function createGalaxy() {
+    const particlesGeometry = new THREE.BufferGeometry();
+    const particlesCount = 15000;
+    const posArray = new Float32Array(particlesCount * 3);
+
+    for (let i = 0; i < particlesCount; i++) {
+        posArray[i * 3] = (Math.random() - 0.5) * 500;
+        posArray[i * 3 + 1] = (Math.random() - 0.5) * 500;
+        posArray[i * 3 + 2] = (Math.random() - 0.5) * 500;
+    }
+
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+    const starTexture = textureLoader.load('https://threejs.org/examples/textures/sprites/disc.png'); 
+
+    const particlesMaterial = new THREE.PointsMaterial({
+        size: 0.8, 
+        sizeAttenuation: true, 
+        color: 0xffffff,
+        transparent: true,
+        map: starTexture,      
+        alphaTest: 0.5,
+        depthWrite: false
+    });
+
+    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particlesMesh);
+
+    return particlesMesh;
+}
+
+function createMoon() {
+    const moonTexture = textureLoader.load('https://threejs.org/examples/textures/planets/moon_1024.jpg');
+    
+    // **CAMBIO:** Luna mucho más grande (Radio 100)
+    const moonGeometry = new THREE.SphereGeometry(100, 64, 64); 
+    const moonMaterial = new THREE.MeshBasicMaterial({ map: moonTexture, color: 0xffffff }); 
+    
+    const mesh = new THREE.Mesh(moonGeometry, moonMaterial);
+    
+    // Ajuste de posición para que la Luna más grande quede centrada visualmente
+    mesh.position.set(-100, 50, -400); 
+    
+    scene.add(mesh);
+    return mesh;
+}
+
+galaxyMesh = createGalaxy();
+moonMesh = createMoon();
+camera.position.z = 100;
+
+// ====================================================================
+// 4. LÓGICA DE CUMPLIDOS AUTOMÁTICOS (Ciclo Rápido 5s + 2s)
+// ====================================================================
+
+const complimentBox = document.getElementById('compliment-box');
+const complimentText = document.getElementById('compliment-text');
+let currentComplimentIndex = 0;
+
+function showCompliment(text) {
+    complimentText.innerHTML = text;
+    complimentBox.classList.add('visible');
+}
+
+window.hideCompliment = function() {
+    complimentBox.classList.remove('visible');
+}
+
+function startComplimentCycle() {
+    showCompliment(COMPLIMENTS[currentComplimentIndex]);
+    currentComplimentIndex++;
+    
+    setInterval(() => {
+        hideCompliment();
+        
+        setTimeout(() => {
+            if (currentComplimentIndex >= COMPLIMENTS.length) {
+                currentComplimentIndex = 0;
+            }
+            showCompliment(COMPLIMENTS[currentComplimentIndex]);
+            currentComplimentIndex++;
+        }, 2000); // Pausa (2 segundos)
+        
+    }, 7000); // Ciclo total (5 segundos de lectura + 2 segundos de pausa = 7 segundos)
+}
+
+setTimeout(startComplimentCycle, 3000); 
+
+
+// ====================================================================
+// 5. BUCLE DE ANIMACIÓN (Movimiento y Renderizado)
+// ====================================================================
+
+const animate = function () {
+    requestAnimationFrame(animate);
+
+    galaxyMesh.rotation.y += 0.0002;
+    galaxyMesh.rotation.x += 0.0001;
+    
+    moonMesh.rotation.y += 0.0003; 
+    
+    renderer.render(scene, camera); 
+};
+
+animate();
+
+
+// ====================================================================
+// 6. MANEJO DE REDIMENSIONAMIENTO
+// ====================================================================
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</html>
