@@ -1,0 +1,2 @@
+# detallito
+para mi vida
